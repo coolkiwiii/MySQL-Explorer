@@ -221,32 +221,13 @@ class Ui_MainWindow(object):
             try:
                 cnx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
                 LoadTree()
-            ##except mysql.connector.Error as err:
-            ##    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            ##        messagebox.showerror("MySQL Login Error","Something is wrong with your username or password. Please try again.")
-            ##        cnx.close()
-            ##    else:
-            ##        messagebox.showerror("MySQL Error",err)
-            except mysql.connector.Error as e:
-                if Error(errno=2003):
-                    print("Error code:", e.errno)        # error number
-                    print("SQLSTATE value:", e.sqlstate) # SQLSTATE value
-                    print("Error message:", e.msg)          # error message
-                    print("Error:", e)                  # errno, sqlstate, msg values
-                    s = str(e)
-                    print("Error:", s)                  # errno, sqlstate, msg values
-                else:
-                    print('AAAAAAAAA')
-                    print("Error code:", e.errno)        # error number
-                    print("SQLSTATE value:", e.sqlstate) # SQLSTATE value
-                    print("Error message:", e.msg)          # error message
-                    print("Error:", e)                  # errno, sqlstate, msg values
-                    s = str(e)
-                    print("Error:", s)                  # errno, sqlstate, msg values
+            except mysql.connector.Error as err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    messagebox.showerror("MySQL Login Error","Something is wrong with your username or password. Please try again.")
+                    cnx.close()
             except (_mysql_connector.MySQLInterfaceError, mysql.connector.errors.DatabaseError):
                 #exception to handle the user being unable to connect to the MySQL server
-                print('E')
-                #pass
+                pass
             else:
                 self.mysqlExplorer.setCurrentIndex(1)
                 cnx.close()
@@ -292,62 +273,6 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 return tuple((self.ItemTreeView.currentItem().parent().text(0), self.ItemTreeView.currentItem().text(0)))
             else:
                 return None
-
-##        def databaseContext(position):
-##            c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
-##            cursor = c3n3xx.cursor()
-##            menuD = QMenu()
-##            createDB = menuD.addAction("Create Database")
-##            deleteDB = menuD.addAction("Delete Database")
-##            action = menuD.exec_(self.databaseView.mapToGlobal(position))
-##            if action == deleteDB:
-##                delete_item = self.databaseView.currentItem().text()
-##                warnddatabase = QMessageBox()
-##                popwarnddatabase = warnddatabase.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the database \"" + delete_item + "\"? All tables inside of the database will be lost!", warnddatabase.Yes, warnddatabase.No)
-##                if popwarnddatabase == warnddatabase.Yes:
-##                    cursor.execute("DROP DATABASE " + delete_item)
-##                    LoadTree()
-##                    c3n3xx.close()
-##            if action == createDB:
-##                self.cdbWindow.show()
-##                LoadTree()
-##                c3n3xx.close()
-##            else:
-##                c3n3xx.close()
-
-        def tableContext(position):
-            print('no')
-##            try:
-##                if getItemParent() != None:
-##                    var = getItemParent()
-##                else:
-##                    raise Invalid
-##                c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
-##                cursor = c3n3xx.cursor()
-##                menuT = QMenu()
-##                createT = menuT.addAction("Create Table")
-##                deleteT = menuT.addAction("Delete Table")
-##                action = menuT.exec_(self.ItemTreeView.viewport().mapToGlobal(position))
-##                if action == deleteT:
-##                    db_from = var[0]
-##                    delete_item = var[1]
-##                    warndtable = QMessageBox()
-##                    popwarndtable = warndtable.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the table \"" + delete_item + "\"? All information inside of the table will be lost!", warndtable.Yes, warndtable.No)
-##                    if popwarndtable == warndtable.Yes:
-##                        cursor.execute("USE " + db_from)
-##                        cursor.execute("DROP TABLE " + delete_item)
-##                        LoadTree()
-##                        c3n3xx.close()
-##                    else:
-##                        c3n3xx.close()
-##                elif action == createT:
-##                    self.ctWindow.show()
-##                    LoadTree()
-##                    c3n3xx.close()
-##                else:
-##                    c3n3xx.close()
-##            except Invalid:
-##                pass
 
         def LoadTree():
             cnnxx = mysql.connector.connect(user='root', password='200513314minecraftcocJV', host='127.0.0.1', port='3306')
@@ -505,9 +430,7 @@ Please Consider editing the data file, deleting the datafile, or using another a
         self.DropDown.activated.connect(loadsave)
         self.LoginButton.clicked.connect(login)
         self.SaveLogin.clicked.connect(savelogin)
-        self.cdbButton.clicked.connect(cdatabase)
         self.tableData.itemChanged.connect(editItem)
-        self.ItemTreeView.customContextMenuRequested.connect(tableContext)
         self.ItemTreeView.itemActivated.connect(LoadTable)
         MainWindow.resized.connect(resizeUI)
 
