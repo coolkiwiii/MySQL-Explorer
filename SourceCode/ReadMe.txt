@@ -8,7 +8,7 @@
 - Packages Listed Below
 
 --- Python Package Requirments ---
- - PySide2 OR pyqt
+ - PySide2
  - mysql.connector
  - tkinter
  - ctypes
@@ -16,11 +16,9 @@
  - sys
  
  --- Package Install Commands ---
+ 
  - PySide2 
       - pip3 install PySide2 --user
-      
- - PyQT
-      - pip3 install PyQt5 --user
       
  - mysql.connector
       - pip3 install mysql-connector-python --user
