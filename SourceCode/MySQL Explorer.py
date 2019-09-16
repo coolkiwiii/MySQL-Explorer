@@ -7,6 +7,7 @@ import os
 from sys import platform
 import mysql.connector
 from mysql.connector import errorcode
+from mysql.connector.errors import Error
 import tkinter as tk
 import ctypes
 from tkinter import messagebox
@@ -33,6 +34,9 @@ elif platform == 'darwin':
             info['CFBundleName'] = 'MySQL Explorer'
 
 root.withdraw()
+
+class Invalid(Exception):
+    pass
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -135,36 +139,21 @@ class Ui_MainWindow(object):
         self.MysqlImage.setGeometry(QtCore.QRect(widthL - (cdpi*(250/96))/2, heightL - ((((cdpi*(163/96))*1.5)/(w3/2)) + (self.uhost.frameGeometry().height()/2) + self.upass.frameGeometry().height() + self.uname.frameGeometry().height()), cdpi*(250/96), cdpi*(163/96)))
 
 
-        widthE = self.mysqlExplorer.frameGeometry().width()
-        heightE = self.mysqlExplorer.frameGeometry().height()
+        widthE = self.Explorer.frameGeometry().width()
+        heightE = self.Explorer.frameGeometry().height()
         
         
-        self.databaseView = QtWidgets.QListWidget(self.Explorer)
-        self.databaseView.setGeometry(QtCore.QRect(widthE/100 * 0.2, heightE/100 * 0.5, widthE/100 * 20, heightE/100 * 96.2))
-        self.databaseView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        heightTD = self.databaseView.frameGeometry().height()
-        self.databaseView.setItemAlignment(QtCore.Qt.AlignLeading)
-        self.databaseView.setObjectName("databaseView")
-        self.databaseView.setContextMenuPolicy(Qt.CustomContextMenu)
-
-        self.tableView = QtWidgets.QListWidget(self.Explorer)
-        self.tableView.setGeometry(QtCore.QRect(widthE/100 * 20.4, heightE/100 * 0.5, widthE/100 * 25, heightE/100 * 96.2))
-        self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        heightTT = self.tableView.frameGeometry().height()
-        self.tableView.setItemAlignment(QtCore.Qt.AlignLeading)
-        self.tableView.setObjectName("tableView")
-        self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ItemTreeView = QtWidgets.QTreeWidget(self.Explorer)
+        self.ItemTreeView.setGeometry(QtCore.QRect(widthE/100 * 0.2, heightE/100 * 0.5, widthE/100 * 45, heightE/100 * 96.2))
+        self.ItemTreeView.headerItem().setText(0, QtWidgets.QApplication.translate("MainWindow", "Database", None, -1))
 
         self.tableData = QtWidgets.QTableWidget(self.Explorer)
-        self.tableData.setGeometry(QtCore.QRect(widthE/100 * 45.7, heightE/100 * 0.5, widthE/100 * 53.9, heightE/100 * 96.2))
+        self.tableData.setGeometry(QtCore.QRect(widthE/100 * 46, heightE/100 * 0.5, widthE/100 * 53.8, heightE/100 * 96.2))
         self.tableData.setObjectName("tableData")
 
         self.cdbWindow = QtWidgets.QWidget()
         self.cdbWindow.setObjectName("cdbWindow")
-        self.cdbWindow.resize((300*cdpi)/(wpx/(cdpi/6)), (200*cdpi)/(hpx/(cdpi/10)))
-
-        widthB = self.cdbWindow.frameGeometry().width()
-        heightB = self.cdbWindow.frameGeometry().height()
+        self.cdbWindow.resize((300*cdpi)/(wpx/(cdpi/6)), (200*cdpi)/(hpx/(cdpi/10)))#7.9875*cdpi
         
         self.dbnameLabel = QtWidgets.QLabel(self.cdbWindow)
         self.dbnameLabel.setObjectName("dbnameLabel")
@@ -231,14 +220,33 @@ class Ui_MainWindow(object):
         def login():
             try:
                 cnx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
-                ListDatabases()
-            except mysql.connector.Error as err:
-                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                    messagebox.showerror("MySQL Login Error","Something is wrong with your user name or password. Please try again.")
-                    cnx.close()
+                LoadTree()
+            ##except mysql.connector.Error as err:
+            ##    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            ##        messagebox.showerror("MySQL Login Error","Something is wrong with your username or password. Please try again.")
+            ##        cnx.close()
+            ##    else:
+            ##        messagebox.showerror("MySQL Error",err)
+            except mysql.connector.Error as e:
+                if Error(errno=2003):
+                    print("Error code:", e.errno)        # error number
+                    print("SQLSTATE value:", e.sqlstate) # SQLSTATE value
+                    print("Error message:", e.msg)          # error message
+                    print("Error:", e)                  # errno, sqlstate, msg values
+                    s = str(e)
+                    print("Error:", s)                  # errno, sqlstate, msg values
                 else:
-                    messagebox.showerror("MySQL Error",err)
-                    cnx.close()
+                    print('AAAAAAAAA')
+                    print("Error code:", e.errno)        # error number
+                    print("SQLSTATE value:", e.sqlstate) # SQLSTATE value
+                    print("Error message:", e.msg)          # error message
+                    print("Error:", e)                  # errno, sqlstate, msg values
+                    s = str(e)
+                    print("Error:", s)                  # errno, sqlstate, msg values
+            except (_mysql_connector.MySQLInterfaceError, mysql.connector.errors.DatabaseError):
+                #exception to handle the user being unable to connect to the MySQL server
+                print('E')
+                #pass
             else:
                 self.mysqlExplorer.setCurrentIndex(1)
                 cnx.close()
@@ -279,106 +287,114 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 self.uhost.setText(uhostdata[2:hdlen])
                 self.uport.setText(uportdata[2:pdlen])
 
-        def databaseContext(position):
-            c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
-            cursor = c3n3xx.cursor()
-            menuD = QMenu()
-            createDB = menuD.addAction("Create Database")
-            deleteDB = menuD.addAction("Delete Database")
-            action = menuD.exec_(self.databaseView.mapToGlobal(position))
-            if action == deleteDB:
-                delete_item = self.databaseView.currentItem().text()
-                warnddatabase = QMessageBox()
-                popwarnddatabase = warnddatabase.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the database \"" + delete_item + "\"? All tables inside of the database will be lost!", warnddatabase.Yes, warnddatabase.No)
-                if popwarnddatabase == warnddatabase.Yes:
-                    cursor.execute("DROP DATABASE " + delete_item)
-                    ListDatabases()
-                    c3n3xx.close()
-            if action == createDB:
-                self.cdbWindow.show()
-                ListDataBases()
-                c3n3xx.close()
+        def getItemParent():
+            if self.ItemTreeView.indexOfTopLevelItem(self.ItemTreeView.currentItem()) == -1:
+                return tuple((self.ItemTreeView.currentItem().parent().text(0), self.ItemTreeView.currentItem().text(0)))
             else:
-                c3n3xx.close()
-                
-        def tableContext(position):
-            c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
-            cursor = c3n3xx.cursor()
-            menuT = QMenu()
-            createT = menuT.addAction("Create Table")
-            deleteT = menuT.addAction("Delete Table")
-            action = menuT.exec_(self.tableView.mapToGlobal(position))
-            if action == deleteT:
-                db_from = self.databaseView.currentItem().text()
-                delete_item = self.tableView.currentItem().text()
-                warndtable = QMessageBox()
-                popwarndtable = warndtable.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the table \"" + delete_item + "\"? All information inside of the table will be lost!", warndtable.Yes, warndtable.No)
-                if popwarndtable == warndtable.Yes:
-                    cursor.execute("USE " + db_from)
-                    cursor.execute("DROP TABLE " + delete_item)
-                    ListTables()
-                    c3n3xx.close()
-                else:
-                    c3n3xx.close()
-            if action == createT:
-                self.ctWindow.show()
-                ListTables()
-                c3n3xx.close()
-            else:
-                c3n3xx.close()
+                return None
 
-        def ListDatabases():
-            self.tableView.clear()
-            self.tableData.clear()
-            cnnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
+##        def databaseContext(position):
+##            c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
+##            cursor = c3n3xx.cursor()
+##            menuD = QMenu()
+##            createDB = menuD.addAction("Create Database")
+##            deleteDB = menuD.addAction("Delete Database")
+##            action = menuD.exec_(self.databaseView.mapToGlobal(position))
+##            if action == deleteDB:
+##                delete_item = self.databaseView.currentItem().text()
+##                warnddatabase = QMessageBox()
+##                popwarnddatabase = warnddatabase.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the database \"" + delete_item + "\"? All tables inside of the database will be lost!", warnddatabase.Yes, warnddatabase.No)
+##                if popwarnddatabase == warnddatabase.Yes:
+##                    cursor.execute("DROP DATABASE " + delete_item)
+##                    LoadTree()
+##                    c3n3xx.close()
+##            if action == createDB:
+##                self.cdbWindow.show()
+##                LoadTree()
+##                c3n3xx.close()
+##            else:
+##                c3n3xx.close()
+
+        def tableContext(position):
+            print('no')
+##            try:
+##                if getItemParent() != None:
+##                    var = getItemParent()
+##                else:
+##                    raise Invalid
+##                c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
+##                cursor = c3n3xx.cursor()
+##                menuT = QMenu()
+##                createT = menuT.addAction("Create Table")
+##                deleteT = menuT.addAction("Delete Table")
+##                action = menuT.exec_(self.ItemTreeView.viewport().mapToGlobal(position))
+##                if action == deleteT:
+##                    db_from = var[0]
+##                    delete_item = var[1]
+##                    warndtable = QMessageBox()
+##                    popwarndtable = warndtable.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the table \"" + delete_item + "\"? All information inside of the table will be lost!", warndtable.Yes, warndtable.No)
+##                    if popwarndtable == warndtable.Yes:
+##                        cursor.execute("USE " + db_from)
+##                        cursor.execute("DROP TABLE " + delete_item)
+##                        LoadTree()
+##                        c3n3xx.close()
+##                    else:
+##                        c3n3xx.close()
+##                elif action == createT:
+##                    self.ctWindow.show()
+##                    LoadTree()
+##                    c3n3xx.close()
+##                else:
+##                    c3n3xx.close()
+##            except Invalid:
+##                pass
+
+        def LoadTree():
+            cnnxx = mysql.connector.connect(user='root', password='200513314minecraftcocJV', host='127.0.0.1', port='3306')
             cursor = cnnxx.cursor()
-            databases = ("SHOW DATABASES")
             cursor.execute("SHOW DATABASES")
             dbases = cursor.fetchall()
-            self.databaseView.clear()
-            self.tableView.clear()
-            self.tableData.clear()
-            j = 0
+            i = 0
             for item in dbases:
-                self.databaseView.sizeHintForRow(j)
-                self.databaseView.addItems(item)
-                j +=1
-            cnnxx.close()
+                itemID = str(item)[2:len(item)-4]
+                Item64ID = QTreeWidgetItem(itemID)
+                Item64ID.setText(0, itemID)
+                try:
+                    ccnnxx = mysql.connector.connect(user='root', password='200513314minecraftcocJV', host='127.0.0.1', port='3306', database=str(itemID))
+                    cursor2 = ccnnxx.cursor()
+                    cursor2.execute("SHOW TABLES")
+                    tbls = cursor2.fetchall()
+                    for table in tbls:
+                        tblID = str(table)[2:len(table)-4]
+                        tbl64ID = QTreeWidgetItem(tblID)
+                        tbl64ID.setText(0, tblID)
+                        Item64ID.addChild(tbl64ID)
+                except mysql.connector.errors.InterfaceError:
+                    pass
+                    
+                self.ItemTreeView.addTopLevelItem(Item64ID)
+                i +=1
 
-        def ListTables():
-            print(self.tableView.currentItem())
-            self.tableView.setItemSelected(self.tableView.currentItem(), False)
-            self.tableView.clear()
-            self.tableData.clear()
-            cnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
-            cursor = cnxx.cursor()
-            item = self.databaseView.currentItem().text()
-            self.tableData.setRowCount(0)
-            self.tableData.setColumnCount(0)
-            cursor.execute("USE " + item)
-            cursor.execute("SHOW TABLES")
-            ddbases = cursor.fetchall()
-            e = 0
-            for item in ddbases:
-                self.tableView.sizeHintForRow(e)
-                self.tableView.addItems(item)
-                e += 1
-            cnxx.close()
+            cnnxx.close()
 
         def LoadTable():
             self.tableData.clear()
+
             try:
-                ccnnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = self.databaseView.currentItem().text())
+                if getItemParent() != None:
+                    var = getItemParent()
+                else:
+                    raise Invalid
+                ccnnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = var[0])
                 cursor = ccnnxx.cursor()
                 self.tableData.setRowCount(0)
                 self.tableData.setColumnCount(0)
                 header = self.tableData.horizontalHeader()       
-                item = self.tableView.currentItem().text()
-                cursor.execute("SELECT * FROM " + item)
+                item = getItemParent()
+                cursor.execute("SELECT * FROM " + var[1])
                 rows = cursor.fetchall()
                 self.tableData.setRowCount(cursor.rowcount)
                 ccnnxx.close()
-                c3nnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = self.databaseView.currentItem().text())
                 self.tableData.setColumnCount(len(rows[0]))
                 columnNames = [a[0] for a in cursor.description]
                 g = 0
@@ -416,7 +432,11 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 else:
                     pass
             except IndexError:
-                print('This table has no information!')
+                #print('This table has no information!')
+                pass
+            except Invalid:
+                #print('not a table')
+                pass
                 
                 
         def editItem():
@@ -450,29 +470,19 @@ Please Consider editing the data file, deleting the datafile, or using another a
             self.dbname.clear()
             self.cdbWindow.hide()
             c3n3x3.close()
-            ListDatabases()
+            LoadTree()
 
         def ctable():
             pass
-
-
-        self.DropDown.activated.connect(loadsave)
-        self.LoginButton.clicked.connect(login)
-        self.SaveLogin.clicked.connect(savelogin)
-        self.cdbButton.clicked.connect(cdatabase)
-        self.databaseView.itemSelectionChanged.connect(ListTables)
-        self.tableView.itemSelectionChanged.connect(LoadTable)
-        self.databaseView.customContextMenuRequested.connect(databaseContext)
-        self.tableView.customContextMenuRequested.connect(tableContext)
-        self.tableData.itemChanged.connect(editItem)
-
-    def resizeUI(self, event):
-        if self.width() > w/10*7 or self.height() > h/10*7:
+        
+        def resizeUI():
             width = MainWindow.frameGeometry().width()
             height = MainWindow.frameGeometry().height()
             self.mysqlExplorer.setGeometry(QtCore.QRect(0, 0, width, height))
             widthL = self.mysqlExplorer.frameGeometry().width()/10 * 5
             heightL = self.mysqlExplorer.frameGeometry().height()/10 * 5
+            w2 = cdpi/96
+            w3 = hpx/432
             self.unameLabel.setGeometry(QtCore.QRect(widthL - self.unameLabel.width() * w2, heightL - (cdpi/11) * 6.5, self.unameLabel.width(), (cdpi/11) * w3))
             self.uname.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL - (cdpi/11) * 6.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
             self.upassLabel.setGeometry(QtCore.QRect(widthL - self.upassLabel.width() * w2, heightL - (cdpi/11) * 3.5, self.upassLabel.width(), (cdpi/11) * w3))
@@ -485,8 +495,21 @@ Please Consider editing the data file, deleting the datafile, or using another a
             self.DropDown.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/2), self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
             self.SaveLogin.setGeometry(QtCore.QRect(widthL -  110* w2, heightL + (cdpi/11) * 9, 120, (cdpi/11) * (w3/1.66)))
             self.LoginButton.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 8.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
+            self.LoginButton.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 8.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
             self.MysqlImage.setGeometry(QtCore.QRect(widthL - (cdpi*(250/96))/2, heightL - ((((cdpi*(163/96))*1.5)/(w3/2)) + (self.uhost.frameGeometry().height()/2) + self.upass.frameGeometry().height() + self.uname.frameGeometry().height()), cdpi*(250/96), cdpi*(163/96)))
-            self.update()
+            widthE = self.mysqlExplorer.frameGeometry().width()/cdpi
+            heightE = self.mysqlExplorer.frameGeometry().height()/cdpi
+            self.ItemTreeView.setGeometry(QtCore.QRect(widthE*0.2, heightE - (cdpi*(2/96)), 3.8*cdpi, (heightE*cdpi - (cdpi*(53.5/96)))))
+            self.tableData.setGeometry(QtCore.QRect(cdpi*(5/96)+(self.ItemTreeView.frameGeometry().width()), heightE - (cdpi*(2/96)), (widthE*cdpi - self.ItemTreeView.frameGeometry().width()) - widthE*1.4, (heightE*cdpi - (cdpi*(53.5/96)))  ))
+
+        self.DropDown.activated.connect(loadsave)
+        self.LoginButton.clicked.connect(login)
+        self.SaveLogin.clicked.connect(savelogin)
+        self.cdbButton.clicked.connect(cdatabase)
+        self.tableData.itemChanged.connect(editItem)
+        self.ItemTreeView.customContextMenuRequested.connect(tableContext)
+        self.ItemTreeView.itemActivated.connect(LoadTable)
+        MainWindow.resized.connect(resizeUI)
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtWidgets.QApplication.translate("MainWindow", "MySQL Explorer", None, -1))
@@ -501,12 +524,20 @@ Please Consider editing the data file, deleting the datafile, or using another a
         self.dbnameLabel.setText(QtWidgets.QApplication.translate("cdbWindow", "Please Enter the name of the\nnew database you would like\nto create!", None, -1))
         self.cdbButton.setText(QtWidgets.QApplication.translate("cdbWindow", "Create Database", None, -1))
 
+class Window(QtWidgets.QMainWindow):
+    resized = QtCore.Signal()
+    def  __init__(self, parent=None):
+        super(Window, self).__init__(parent=parent)
+        ui = Ui_MainWindow()
+        ui.setupUi(self)
+
+    def resizeEvent(self, event):
+        self.resized.emit()
+        return super(Window, self).resizeEvent(event)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
+    w = Window()
+    w.show()
     sys.exit(app.exec_())
 
