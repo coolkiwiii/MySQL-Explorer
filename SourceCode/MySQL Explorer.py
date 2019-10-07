@@ -3,29 +3,28 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 from PySide2.QtCore import *
 import sys
-import os
 from sys import platform
+import os
 import mysql.connector
 from mysql.connector import errorcode
-from mysql.connector.errors import Error
 import tkinter as tk
-import ctypes
-from tkinter import messagebox
+
 
 root = tk.Tk()
 wpx = root.winfo_screenwidth()
 hpx = root.winfo_screenheight()
 
 if platform == 'win32':
+    import ctypes
     userwin = ctypes.windll.user32
     userwin.SetProcessDPIAware()
     [w, h] = [userwin.GetSystemMetrics(0), userwin.GetSystemMetrics(1)]
     cdpi = w*96/wpx
 elif platform == 'darwin':
-    usermac = ctypes.cdll.kernel32
-    usermac.SetProcessDPIAware()
-    [w, h] = [usermac.GetSystemMetrics(0), usermac.GetSystemMetrics(1)]
-    cdpi = w*96/wpx
+    #usermac = ctypes.cdll.kernel32
+    #usermac.SetProcessDPIAware()
+    #[w, h] = [usermac.GetSystemMetrics(0), usermac.GetSystemMetrics(1)]
+    #cdpi = w*96/wpx
     from Foundation import NSBundle
     bundle = NSBundle.mainBundle()
     if bundle:
@@ -35,11 +34,11 @@ elif platform == 'darwin':
 
 root.withdraw()
 
-class Invalid(Exception):
-    pass
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+        
+        # --- MAIN WINDOW ---
+        
         MainWindow.setObjectName("MainWindow")
         w1 = w/10*7
         h1 = h/10*7
@@ -65,6 +64,8 @@ class Ui_MainWindow(object):
         self.Explorer = QtWidgets.QWidget()
         self.Explorer.setObjectName("Explorer")
         self.mysqlExplorer.addTab(self.Explorer, "Explorer")
+
+        # --- MYSQL LOGIN PAGE ---
 
         widthL = self.mysqlExplorer.frameGeometry().width()/10 * 5
         heightL = self.mysqlExplorer.frameGeometry().height()/10 * 5
@@ -138,22 +139,40 @@ class Ui_MainWindow(object):
         self.MysqlImage.setScaledContents(True)
         self.MysqlImage.setGeometry(QtCore.QRect(widthL - (cdpi*(250/96))/2, heightL - ((((cdpi*(163/96))*1.5)/(w3/2)) + (self.uhost.frameGeometry().height()/2) + self.upass.frameGeometry().height() + self.uname.frameGeometry().height()), cdpi*(250/96), cdpi*(163/96)))
 
+        # --- MYSQL EXPLORER ---
+        
+        widthE = self.mysqlExplorer.frameGeometry().width()
+        heightE = self.mysqlExplorer.frameGeometry().height()
+        
 
-        widthE = self.Explorer.frameGeometry().width()
-        heightE = self.Explorer.frameGeometry().height()
-        
-        
-        self.ItemTreeView = QtWidgets.QTreeWidget(self.Explorer)
-        self.ItemTreeView.setGeometry(QtCore.QRect(widthE/100 * 0.2, heightE/100 * 0.5, widthE/100 * 45, heightE/100 * 96.2))
-        self.ItemTreeView.headerItem().setText(0, QtWidgets.QApplication.translate("MainWindow", "Database", None, -1))
+        self.databaseView = QtWidgets.QListWidget(self.Explorer)
+        self.databaseView.setGeometry(QtCore.QRect(widthE/100 * 0.2, heightE/100 * 0.5, widthE/100 * 20, heightE/100 * 96.2))
+        self.databaseView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        heightTD = self.databaseView.frameGeometry().height()
+        self.databaseView.setItemAlignment(QtCore.Qt.AlignLeading)
+        self.databaseView.setObjectName("databaseView")
+        self.databaseView.setContextMenuPolicy(Qt.CustomContextMenu)
+
+        self.tableView = QtWidgets.QListWidget(self.Explorer)
+        self.tableView.setGeometry(QtCore.QRect(widthE/100 * 20.4, heightE/100 * 0.5, widthE/100 * 25, heightE/100 * 96.2))
+        self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        heightTT = self.tableView.frameGeometry().height()
+        self.tableView.setItemAlignment(QtCore.Qt.AlignLeading)
+        self.tableView.setObjectName("tableView")
+        self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
 
         self.tableData = QtWidgets.QTableWidget(self.Explorer)
-        self.tableData.setGeometry(QtCore.QRect(widthE/100 * 46, heightE/100 * 0.5, widthE/100 * 53.8, heightE/100 * 96.2))
+        self.tableData.setGeometry(QtCore.QRect(widthE/100 * 45.7, heightE/100 * 0.5, widthE/100 * 53.9, heightE/100 * 96.2))
         self.tableData.setObjectName("tableData")
+
+        # --- DATABASE CREATOR ---
 
         self.cdbWindow = QtWidgets.QWidget()
         self.cdbWindow.setObjectName("cdbWindow")
-        self.cdbWindow.resize((300*cdpi)/(wpx/(cdpi/6)), (200*cdpi)/(hpx/(cdpi/10)))#7.9875*cdpi
+        self.cdbWindow.resize((300*cdpi)/(wpx/(cdpi/6)), (200*cdpi)/(hpx/(cdpi/10)))
+
+        widthB = self.cdbWindow.frameGeometry().width()
+        heightB = self.cdbWindow.frameGeometry().height()
         
         self.dbnameLabel = QtWidgets.QLabel(self.cdbWindow)
         self.dbnameLabel.setObjectName("dbnameLabel")
@@ -169,33 +188,78 @@ class Ui_MainWindow(object):
         self.cdbButton.setObjectName("cdbButton")
         self.cdbButton.setGeometry(QtCore.QRect(self.cdbWindow.frameGeometry().width()/2 - ((w/10.9714)/2), self.cdbWindow.frameGeometry().height()/2 + ((cdpi/11) * w3)*1.5, w/10.9714, (cdpi/11) * w3))
 
+        # --- TABLE CREATOR ---
+
         self.ctWindow = QtWidgets.QWidget()
         self.ctWindow.setObjectName("ctWindow")
-        self.ctWindow.resize((450*cdpi)/(wpx/(cdpi/6)), (400*cdpi)/(hpx/(cdpi/8)))
+        self.ctWindow.resize((cdpi*(585/96)), (cdpi*(515/96)))
+        self.ctWindow.setContextMenuPolicy(Qt.CustomContextMenu)
+        #self.ctWindow.setMinimumSize((340*cdpi)/(wpx/(cdpi/6)), (265*cdpi)/(hpx/(cdpi/8)))
+        #self.ctWindow.setMaximumSize((340*cdpi)/(wpx/(cdpi/6)), (265*cdpi)/(hpx/(cdpi/8)))
 
         widthA = self.ctWindow.frameGeometry().width()
         heightA = self.ctWindow.frameGeometry().height()
-        
+
+        self.createtble = QtWidgets.QPushButton(self.ctWindow)
+        self.createtble.setObjectName("createtble")
+        self.createtble.setGeometry(QtCore.QRect((cdpi*(300/96)), (cdpi*(7/96)), (cdpi*(130/96)), (cdpi*(25/96))))
+
         self.tname = QtWidgets.QLineEdit(self.ctWindow)
         self.tname.setObjectName("tname")
-        self.tname.setPlaceholderText("New Table Name")
-        self.tname.setGeometry(QtCore.QRect(widthA/2 - (w/10.9714/2), heightA/2, w/10.9714, (cdpi/11) * w3))
+        self.tname.setPlaceholderText(" Table Name")
+        self.tname.setGeometry(QtCore.QRect((cdpi*(445/96)), (cdpi*(7/96)), (cdpi*(130/96)), (cdpi*(25/96))))
 
-        self.addColumn = QtWidgets.QListWidget(self.ctWindow)
-        self.addColumn.setGeometry(QtCore.QRect(widthE/100 * 0.2, heightE/100 * 0.5, widthE/100 * 20, heightE/100 * 96.2))
-        self.addColumn.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.addColumn.setItemAlignment(QtCore.Qt.AlignLeading)
-        self.addColumn.setObjectName("addColumn")
-        self.addColumn.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.addrow = QtWidgets.QPushButton(self.ctWindow)
+        self.addrow.setObjectName("addrow")
+        self.addrow.setGeometry(QtCore.QRect((cdpi*(10/96)), (cdpi*(7/96)), (cdpi*(130/96)), (cdpi*(25/96))))
 
-        self.ateWindow = QtWidgets.QWidget()
-        self.ctWindow.setObjectName("ctWindow")
-        self.ctWindow.resize((250*cdpi)/(wpx/(cdpi/6)), (200*cdpi)/(hpx/(cdpi/8)))
+        self.removerow = QtWidgets.QPushButton(self.ctWindow)
+        self.removerow.setObjectName("removetble")
+        self.removerow.setGeometry(QtCore.QRect((cdpi*(155/96)), (cdpi*(7/96)), (cdpi*(130/96)), (cdpi*(25/96))))
+
+        self.rname = QtWidgets.QLineEdit(self.ctWindow)
+        self.rname.setObjectName("tname")
+        self.rname.setPlaceholderText(" New Row Name")
+        self.rname.setGeometry(QtCore.QRect((cdpi*(10/96)), (cdpi*(70/96)), (cdpi*(275/96)), (cdpi*(25/96))))
+
+        self.ctRows = QtWidgets.QTableWidget(self.ctWindow)
+        self.ctRows.setGeometry(QtCore.QRect((cdpi*(10/96)), (cdpi*(100/96)), (cdpi*(275/96)), (cdpi*(405/96))))
+        self.ctRows.setObjectName("ctRows")
+
+        self.addcolumn = QtWidgets.QPushButton(self.ctWindow)
+        self.addcolumn.setObjectName("addcolumn")
+        self.addcolumn.setGeometry(QtCore.QRect((cdpi*(300/96)), (cdpi*(40/96)), (cdpi*(130/96)), (cdpi*(25/96))))
+
+        self.removecolumn = QtWidgets.QPushButton(self.ctWindow)
+        self.removecolumn.setObjectName("removecolumn")
+        self.removecolumn.setGeometry(QtCore.QRect((cdpi*(445/96)), (cdpi*(40/96)), (cdpi*(130/96)), (cdpi*(25/96))))
+
+        self.cname = QtWidgets.QLineEdit(self.ctWindow)
+        self.cname.setObjectName("cname")
+        self.cname.setPlaceholderText(" New Column Name")
+        self.cname.setGeometry(QtCore.QRect((cdpi*(300/96)), (cdpi*(70/96)), (cdpi*(275/96)), (cdpi*(25/96))))
+
+        self.ctColumns = QtWidgets.QListWidget(self.ctWindow)
+        self.ctColumns.setGeometry(QtCore.QRect((cdpi*(300/96)), (cdpi*(100/96)), (cdpi*(275/96)), (cdpi*(405/96))))
+
+        self.ctCPicker = QtWidgets.QComboBox(self.ctWindow)
+        self.ctCPicker.setObjectName("ctCPicker")
+        self.ctCPicker.setGeometry(QtCore.QRect((cdpi*(155/96)), (cdpi*(40/96)), (cdpi*(130/96)), (cdpi*(25/96))))
+        #self.ctCPicker.addItem("Column")
+
+        self.ctRPicker = QtWidgets.QComboBox(self.ctWindow)
+        self.ctRPicker.setObjectName("ctRPicker")
+        self.ctRPicker.setGeometry(QtCore.QRect((cdpi*(10/96)), (cdpi*(40/96)), (cdpi*(130/96)), (cdpi*(25/96))))
+        self.ctRPicker.addItem("New Row")
+
+        # --- SETTING UP CONNECTIONS ---
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.retranslateUi(MainWindow)
         self.mysqlExplorer.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        # --- MAIN CODE ---
 
         try:
             path = str(os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))) + os.sep + 'MySQLExplorerData'
@@ -220,14 +284,14 @@ class Ui_MainWindow(object):
         def login():
             try:
                 cnx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
-                LoadTree()
+                ListDatabases()
             except mysql.connector.Error as err:
                 if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                    messagebox.showerror("MySQL Login Error","Something is wrong with your username or password. Please try again.")
+                    messagebox.showerror("MySQL Login Error","Something is wrong with your user name or password. Please try again.")
                     cnx.close()
-            except (_mysql_connector.MySQLInterfaceError, mysql.connector.errors.DatabaseError):
-                #exception to handle the user being unable to connect to the MySQL server
-                pass
+                else:
+                    messagebox.showerror("MySQL Error",err)
+                    cnx.close()
             else:
                 self.mysqlExplorer.setCurrentIndex(1)
                 cnx.close()
@@ -254,7 +318,7 @@ Please Consider editing the data file, deleting the datafile, or using another a
             if pick == '!=!SELECT-A-SAVE!=!':
                 pass
             else:
-                path = path = str(os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))) + os.sep + 'MySQLExplorerData' + os.sep
+                path = str(os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))) + os.sep + 'MySQLExplorerData' + os.sep
                 unamedata = str(open(path + pick + '.txt', 'r').readlines()[0:1])
                 upassdata = str(open(path + pick + '.txt', 'r').readlines()[1:2])
                 uhostdata = str(open(path + pick + '.txt', 'r').readlines()[2:3])
@@ -268,55 +332,107 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 self.uhost.setText(uhostdata[2:hdlen])
                 self.uport.setText(uportdata[2:pdlen])
 
-        def getItemParent():
-            if self.ItemTreeView.indexOfTopLevelItem(self.ItemTreeView.currentItem()) == -1:
-                return tuple((self.ItemTreeView.currentItem().parent().text(0), self.ItemTreeView.currentItem().text(0)))
+        def databaseContext(position):
+            c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
+            cursor = c3n3xx.cursor()
+            menuD = QMenu()
+            createDB = menuD.addAction("Create Database")
+            deleteDB = menuD.addAction("Delete Database")
+            action = menuD.exec_(self.databaseView.mapToGlobal(position))
+            if action == deleteDB:
+                delete_item = self.databaseView.currentItem().text()
+                warnddatabase = QMessageBox()
+                popwarnddatabase = warnddatabase.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the database \"" + delete_item + "\"? All tables inside of the database will be lost!", warnddatabase.Yes, warnddatabase.No)
+                if popwarnddatabase == warnddatabase.Yes:
+                    cursor.execute("DROP DATABASE " + delete_item)
+                    ListDatabases()
+                    c3n3xx.close()
+            if action == createDB:
+                self.cdbWindow.show()
+                ListDataBases()
+                c3n3xx.close()
             else:
-                return None
+                c3n3xx.close()
+                
+        def tableContext(position):
+            c3n3xx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
+            cursor = c3n3xx.cursor()
+            menuT = QMenu()
+            createT = menuT.addAction("Create Table")
+            deleteT = menuT.addAction("Delete Table")
+            action = menuT.exec_(self.tableView.mapToGlobal(position))
+            if action == deleteT:
+                db_from = self.databaseView.currentItem().text()
+                delete_item = self.tableView.currentItem().text()
+                warndtable = QMessageBox()
+                popwarndtable = warndtable.warning(QtWidgets.QWidget(),'Deletion Confirmation', "Are you sure you would like to delete the table \"" + delete_item + "\"? All information inside of the table will be lost!", warndtable.Yes, warndtable.No)
+                if popwarndtable == warndtable.Yes:
+                    cursor.execute("USE " + db_from)
+                    cursor.execute("DROP TABLE " + delete_item)
+                    ListTables()
+                    c3n3xx.close()
+                else:
+                    c3n3xx.close()
+            if action == createT:
+                self.ctWindow.show()
+                c3n3xx.close()
+            else:
+                c3n3xx.close()
 
-        def LoadTree():
-            cnnxx = mysql.connector.connect(user='root', password='200513314minecraftcocJV', host='127.0.0.1', port='3306')
+        def ctbleContext(position):
+            menucT = QMenu()
+            cthelp = menucT.addAction("Help")
+            action = menucT.exec_(self.ctWindow.mapToGlobal(position))
+            if action == cthelp:
+                pass
+
+        def ListDatabases():
+            self.tableView.clear()
+            self.tableData.clear()
+            cnnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
             cursor = cnnxx.cursor()
+            databases = ("SHOW DATABASES")
             cursor.execute("SHOW DATABASES")
             dbases = cursor.fetchall()
-            i = 0
+            self.databaseView.clear()
+            self.tableView.clear()
+            self.tableData.clear()
+            j = 0
             for item in dbases:
-                itemID = str(item)[2:len(item)-4]
-                Item64ID = QTreeWidgetItem(itemID)
-                Item64ID.setText(0, itemID)
-                try:
-                    ccnnxx = mysql.connector.connect(user='root', password='200513314minecraftcocJV', host='127.0.0.1', port='3306', database=str(itemID))
-                    cursor2 = ccnnxx.cursor()
-                    cursor2.execute("SHOW TABLES")
-                    tbls = cursor2.fetchall()
-                    for table in tbls:
-                        tblID = str(table)[2:len(table)-4]
-                        tbl64ID = QTreeWidgetItem(tblID)
-                        tbl64ID.setText(0, tblID)
-                        Item64ID.addChild(tbl64ID)
-                except mysql.connector.errors.InterfaceError:
-                    pass
-                    
-                self.ItemTreeView.addTopLevelItem(Item64ID)
-                i +=1
-
+                self.databaseView.sizeHintForRow(j)
+                self.databaseView.addItems(item)
+                j +=1
             cnnxx.close()
+
+        def ListTables():
+            print(self.tableView.currentItem())
+            self.tableView.setItemSelected(self.tableView.currentItem(), False)
+            self.tableView.clear()
+            self.tableData.clear()
+            cnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
+            cursor = cnxx.cursor()
+            item = self.databaseView.currentItem().text()
+            self.tableData.setRowCount(0)
+            self.tableData.setColumnCount(0)
+            cursor.execute("USE " + item)
+            cursor.execute("SHOW TABLES")
+            ddbases = cursor.fetchall()
+            e = 0
+            for item in ddbases:
+                self.tableView.sizeHintForRow(e)
+                self.tableView.addItems(item)
+                e += 1
+            cnxx.close()
 
         def LoadTable():
             self.tableData.clear()
-
             try:
-                if getItemParent() != None:
-                    var = getItemParent()
-                else:
-                    raise Invalid
-                ccnnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = var[0])
+                ccnnxx = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = self.databaseView.currentItem().text())
                 cursor = ccnnxx.cursor()
                 self.tableData.setRowCount(0)
                 self.tableData.setColumnCount(0)
-                header = self.tableData.horizontalHeader()       
-                item = getItemParent()
-                cursor.execute("SELECT * FROM " + var[1])
+                header = self.tableData.horizontalHeader()
+                cursor.execute("SELECT * FROM " + self.tableView.currentItem().text())
                 rows = cursor.fetchall()
                 self.tableData.setRowCount(cursor.rowcount)
                 ccnnxx.close()
@@ -327,40 +443,36 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 i = 0
                 j = 0
                 k = 0
-                a = 1
                 counter = 0
-                if a == 1:
-                    for items in columnNames:
-                        item = QtWidgets.QTableWidgetItem()
-                        self.tableData.setHorizontalHeaderItem(g, item)
-                        self.tableData.horizontalHeaderItem(g).setText(QtWidgets.QApplication.translate("MainWindow", columnNames[h], None, -1))
-                        header.setSectionResizeMode(g, QtWidgets.QHeaderView.ResizeToContents)
-                        g += 1
-                        h += 1
-                    for row in rows:
-                        counter += 1
-                        if i < counter:
-                            while j != len(rows[0]):
-                                item = QtWidgets.QTableWidgetItem()
-                                self.tableData.setItem(i, k, item)
-                                self.tableData.item(i, k).setText(QtWidgets.QApplication.translate("MainWindow", str(row[j]), None, -1))
-                                k +=1
-                                j +=1
-                            else:
-                                i +=1
-                                k = 0
-                                j = 0
+                for items in columnNames:
+                    item = QtWidgets.QTableWidgetItem()
+                    self.tableData.setHorizontalHeaderItem(g, item)
+                    self.tableData.horizontalHeaderItem(g).setText(QtWidgets.QApplication.translate("MainWindow", columnNames[h], None, -1))
+                    header.setSectionResizeMode(g, QtWidgets.QHeaderView.ResizeToContents)
+                    g += 1
+                    h += 1
+                for row in rows:
+                    counter += 1
+                    if i < counter:
+                        while j != len(rows[0]):
+                            item = QtWidgets.QTableWidgetItem()
+                            self.tableData.setItem(i, k, item)
+                            self.tableData.item(i, k).setText(QtWidgets.QApplication.translate("MainWindow", str(row[j]), None, -1))
+                            k +=1
+                            j +=1
                         else:
+                            i +=1
                             k = 0
                             j = 0
-                    a = 2
-                else:
-                    pass
+                    else:
+                        k = 0
+                        j = 0
             except IndexError:
                 #print('This table has no information!')
                 pass
-            except Invalid:
-                #print('not a table')
+            except TypeError:
+                pass
+            except mysql.connector.errors.ProgrammingError:
                 pass
                 
                 
@@ -387,18 +499,84 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 pass
 
         def cdatabase():
-            c3n3x3 = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = self.databaseView.currentItem().text())
+            c3n3x3 = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text())
             cursor = c3n3x3.cursor()
-            cdbnamevar = self.dbname.text()
-            print(cdbnamevar)
-            cursor.execute("CREATE DATABASE " + cdbnamevar)
+            cursor.execute("CREATE DATABASE " + self.dbname.text())
             self.dbname.clear()
             self.cdbWindow.hide()
             c3n3x3.close()
-            LoadTree()
+            ListDatabases()
 
         def ctable():
-            pass
+            colnames = []
+            rvals = []
+            vals = []
+            allRows = self.ctRows.rowCount()
+            allColumns = self.ctRows.columnCount()
+            for rows in range(allRows):
+                for columns in range(allColumns):
+                    if self.ctRows.item(rows, columns).text() != "":
+                        u = self.ctRows.item(rows, columns).text()
+                    else:
+                        u = ""
+                    rvals.append(u)
+                vals.append(tuple(rvals))
+                rvals = []
+            a = 0
+            for y in range(self.ctColumns.count()):
+                colnames.append(self.ctColumns.item(y).text())
+                a += 1
+            if a == 1:
+                tcoln = '('+str([c for c in colnames])[1:len([c for c in colnames])-2]+')'
+            else:
+                tcoln = tuple(colnames)
+            if self.tname.text() != "":
+                sql = "CREATE TABLE "+self.tname.text()+" "+str(tcoln)+" VALUES "+str(vals)
+                c4n4x5 = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = self.databaseView.currentItem().text())
+                cursor = c4n4x5.cursor()
+                cursor.execute(sql)
+                self.ctWindow.hide()
+                ListDatabases()
+            else:
+                print("YOU TABLE NEEDS A NAME")
+            
+
+        def ctaddrow():
+            if self.ctRPicker.currentText() == "New Row":
+                g = self.ctRows.rowCount()
+                self.ctRPicker.addItem(str(self.ctRPicker.count()))
+            else:
+                g = int(self.ctRPicker.currentText()) - 1
+
+            if self.ctCPicker.currentText() == "":
+                h = 0
+            else:
+                h = self.ctCPicker.currentIndex()
+
+            item = QtWidgets.QTableWidgetItem(self.rname.text())
+            self.ctRows.setRowCount(g+1)
+            self.ctRows.setItem(g, h, item)
+
+        def ctaddcolumn():
+            columnName = self.cname.text()
+            self.ctCPicker.addItem(columnName)
+            self.ctColumns.addItem(columnName)
+            g = self.ctRows.columnCount()
+            item = QtWidgets.QTableWidgetItem(columnName)
+            self.ctRows.setColumnCount(g+1)
+            self.ctRows.setHorizontalHeaderItem(g, item) 
+
+        def ctremoverow():
+            self.ctRows.removeRow(self.ctRows.row(self.ctRows.currentItem()))
+
+        def ctremovecolumn():
+            self.ctColumns.takeItem(self.ctColumns.row(self.ctColumns.currentItem()))
+            print("ListView: "+str(self.ctColumns.row(self.ctColumns.currentItem())))
+            self.ctRows.removeColumn(self.ctColumns.row(self.ctColumns.currentItem()))
+            print("TableWidget: "+str(self.ctRows.columnCount()))
+            print(" ")
+
+        # --- HANDLE WINDOW RESIZES ---
         
         def resizeUI():
             width = MainWindow.frameGeometry().width()
@@ -406,7 +584,7 @@ Please Consider editing the data file, deleting the datafile, or using another a
             self.mysqlExplorer.setGeometry(QtCore.QRect(0, 0, width, height))
             widthL = self.mysqlExplorer.frameGeometry().width()/10 * 5
             heightL = self.mysqlExplorer.frameGeometry().height()/10 * 5
-            w2 = cdpi/96
+            w2 = cdpi/80
             w3 = hpx/432
             self.unameLabel.setGeometry(QtCore.QRect(widthL - self.unameLabel.width() * w2, heightL - (cdpi/11) * 6.5, self.unameLabel.width(), (cdpi/11) * w3))
             self.uname.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL - (cdpi/11) * 6.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
@@ -422,21 +600,40 @@ Please Consider editing the data file, deleting the datafile, or using another a
             self.LoginButton.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 8.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
             self.LoginButton.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 8.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
             self.MysqlImage.setGeometry(QtCore.QRect(widthL - (cdpi*(250/96))/2, heightL - ((((cdpi*(163/96))*1.5)/(w3/2)) + (self.uhost.frameGeometry().height()/2) + self.upass.frameGeometry().height() + self.uname.frameGeometry().height()), cdpi*(250/96), cdpi*(163/96)))
-            widthE = self.mysqlExplorer.frameGeometry().width()/cdpi
-            heightE = self.mysqlExplorer.frameGeometry().height()/cdpi
-            self.ItemTreeView.setGeometry(QtCore.QRect(widthE*0.2, heightE - (cdpi*(2/96)), 3.8*cdpi, (heightE*cdpi - (cdpi*(53.5/96)))))
-            self.tableData.setGeometry(QtCore.QRect(cdpi*(5/96)+(self.ItemTreeView.frameGeometry().width()), heightE - (cdpi*(2/96)), (widthE*cdpi - self.ItemTreeView.frameGeometry().width()) - widthE*1.4, (heightE*cdpi - (cdpi*(53.5/96)))  ))
+            widthE = self.mysqlExplorer.frameGeometry().width()
+            heightE = self.mysqlExplorer.frameGeometry().height()
+            self.databaseView.setGeometry(QtCore.QRect(widthE/100 * 0.2, heightE/100 * 0.5, widthE/100 * 20, (heightE/100 * 95) - 10))
+            self.tableView.setGeometry(QtCore.QRect(widthE/100 * 20.4, heightE/100 * 0.5, widthE/100 * 25, (heightE/100 * 95) - 10))
+            self.tableData.setGeometry(QtCore.QRect(widthE/100 * 45.7, heightE/100 * 0.5, widthE/100 * 53.9, (heightE/100 * 95) - 10))
 
-        self.DropDown.activated.connect(loadsave)
+        # --- BUTTON CONNECTIONS ---
+            
+            # --- LOGIN PAGE ---
         self.LoginButton.clicked.connect(login)
         self.SaveLogin.clicked.connect(savelogin)
+        self.DropDown.activated.connect(loadsave)
+            # --- EXPLORER PAGE ---
+        self.databaseView.itemSelectionChanged.connect(ListTables)
+        self.tableView.itemSelectionChanged.connect(LoadTable)
+        self.databaseView.customContextMenuRequested.connect(databaseContext)
+        self.tableView.customContextMenuRequested.connect(tableContext)
         self.tableData.itemChanged.connect(editItem)
-        self.ItemTreeView.itemActivated.connect(LoadTable)
+            # --- DATABASE CREATION PAGE ---
+        self.cdbButton.clicked.connect(cdatabase)
+            # --- TABLE CREATION PAGE ---
+        self.ctWindow.customContextMenuRequested.connect(ctbleContext)
+        self.addrow.clicked.connect(ctaddrow)
+        self.removerow.clicked.connect(ctremoverow)
+        self.addcolumn.clicked.connect(ctaddcolumn)
+        self.removecolumn.clicked.connect(ctremovecolumn)
+        self.createtble.clicked.connect(ctable)
+            # --- MAIN WINDOW RESIZE DETECTION ---
         MainWindow.resized.connect(resizeUI)
+
+    # --- SETTING OBJECT NAMES ---
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtWidgets.QApplication.translate("MainWindow", "MySQL Explorer", None, -1))
-        self.cdbWindow.setWindowTitle(QtWidgets.QApplication.translate("cdbWindow", "DB Create", None, -1))
         self.DropDownLabel.setText(QtWidgets.QApplication.translate("MainWindow", "Saved Logins", None, -1))
         self.unameLabel.setText(QtWidgets.QApplication.translate("MainWindow", "Username", None, -1))
         self.upassLabel.setText(QtWidgets.QApplication.translate("MainWindow", "Password", None, -1))
@@ -444,8 +641,19 @@ Please Consider editing the data file, deleting the datafile, or using another a
         self.uportLabel.setText(QtWidgets.QApplication.translate("MainWindow", "Port", None, -1))
         self.SaveLogin.setText(QtWidgets.QApplication.translate("MainWindow", "Save Login", None, -1))
         self.LoginButton.setText(QtWidgets.QApplication.translate("MainWindow", "Login", None, -1))
+        # --- Database Creator ---
+        self.cdbWindow.setWindowTitle(QtWidgets.QApplication.translate("cdbWindow", "Database Creator", None, -1))
         self.dbnameLabel.setText(QtWidgets.QApplication.translate("cdbWindow", "Please Enter the name of the\nnew database you would like\nto create!", None, -1))
         self.cdbButton.setText(QtWidgets.QApplication.translate("cdbWindow", "Create Database", None, -1))
+        # --- Table Creator ---
+        self.ctWindow.setWindowTitle(QtWidgets.QApplication.translate("ctWindow", 'Table Creator'))
+        self.createtble.setText(QtWidgets.QApplication.translate("ctWindow", "Create Table"))
+        self.addrow.setText(QtWidgets.QApplication.translate("ctWindow", "+ Add Row"))
+        self.removerow.setText(QtWidgets.QApplication.translate("ctWindow", "- Remove Row"))
+        self.addcolumn.setText(QtWidgets.QApplication.translate("ctWindow", "+ Add Column"))
+        self.removecolumn.setText(QtWidgets.QApplication.translate("ctWindow", "- Remove Column"))
+
+# --- CREATING WINDOW RESIZED SIGNAL ---
 
 class Window(QtWidgets.QMainWindow):
     resized = QtCore.Signal()
@@ -458,8 +666,13 @@ class Window(QtWidgets.QMainWindow):
         self.resized.emit()
         return super(Window, self).resizeEvent(event)
 
+# --- STARTUP ---
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
+    #Showing Window Class instead of the Ui_MainWindow Class
+    #Because the Ui_MainWindow is "Projected" through the Window Class
+    #There for allowing it to detect resizes (Not 100% sure since im not an expert)
     w = Window()
     w.show()
     sys.exit(app.exec_())
