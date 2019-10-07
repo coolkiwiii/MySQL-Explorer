@@ -28,6 +28,3 @@
 --- Coming Soon ---
 - Editing Tables
 - Creating Tables
-- Deleting Tables
-- Creating Databases
-- Deleting Databases
