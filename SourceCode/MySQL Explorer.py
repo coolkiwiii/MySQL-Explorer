@@ -166,8 +166,6 @@ class Ui_MainWindow(object):
         self.cdbButton.setObjectName("cdbButton")
         self.cdbButton.setGeometry(QtCore.QRect(self.cdbWindow.frameGeometry().width()/2 - ((w/10.9714)/2), self.cdbWindow.frameGeometry().height() - ((cdpi/11) * w3)*1.5, w/10.9714, (cdpi/10) * w3))
 
-        self.cdbWindow.show()
-
         # --- TABLE CREATOR ---
 
         self.ctWindow = QtWidgets.QWidget()
@@ -659,6 +657,6 @@ if __name__ == "__main__":
     #Because the Ui_MainWindow is "Projected" through the Window Class
     #There for allowing it to detect resizes (Not 100% sure since im not an expert and its code i modified to fit my needs)
     w = Window()
-    #w.show()
+    w.show()
     sys.exit(app.exec_())
 
