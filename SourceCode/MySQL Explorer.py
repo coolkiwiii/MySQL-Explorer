@@ -9,7 +9,6 @@ import mysql.connector
 from mysql.connector import errorcode
 import tkinter as tk
 
-
 root = tk.Tk()
 wpx = root.winfo_screenwidth()
 hpx = root.winfo_screenheight()
@@ -20,17 +19,21 @@ if platform == 'win32':
     userwin.SetProcessDPIAware()
     [w, h] = [userwin.GetSystemMetrics(0), userwin.GetSystemMetrics(1)]
     cdpi = w*96/wpx
+    myappid = 'mycompany.myproduct.subproduct.version'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 elif platform == 'darwin':
-    #usermac = ctypes.cdll.kernel32
-    #usermac.SetProcessDPIAware()
-    #[w, h] = [usermac.GetSystemMetrics(0), usermac.GetSystemMetrics(1)]
-    #cdpi = w*96/wpx
+    from AppKit import NSScreen
     from Foundation import NSBundle
+    h = NSScreen.mainScreen().frame().size.height
+    w = NSScreen.mainScreen().frame().size.width
+    cdpi = w*96/wpx
     bundle = NSBundle.mainBundle()
     if bundle:
         info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
         if info and info['CFBundleName'] == 'Python':
             info['CFBundleName'] = 'MySQL Explorer'
+#elif platform == 'linux1' or platform == 'linux2':
+
 
 root.withdraw()
 
@@ -66,87 +69,63 @@ class Ui_MainWindow(object):
         self.mysqlExplorer.addTab(self.Explorer, "Explorer")
 
         # --- MYSQL LOGIN PAGE ---
-
-        widthL = self.mysqlExplorer.frameGeometry().width()/10 * 5
-        heightL = self.mysqlExplorer.frameGeometry().height()/10 * 5
-
-        w2 = cdpi/80
-        w3 = hpx/432
         
         self.unameLabel = QtWidgets.QLabel(self.LoginPage)
         self.unameLabel.setObjectName("unameLabel")
         self.unameLabel.setScaledContents(True)
-        self.unameLabel.setGeometry(QtCore.QRect(widthL - self.unameLabel.width() * w2, heightL - (cdpi/11) * 6.5, self.unameLabel.width(), (cdpi/11) * w3))
 
         self.uname = QtWidgets.QLineEdit(self.LoginPage)
         self.uname.setObjectName("uname")
         self.uname.setPlaceholderText("Username")
-        self.uname.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL - (cdpi/11) * 6.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
         
         self.upassLabel = QtWidgets.QLabel(self.LoginPage)
         self.upassLabel.setObjectName("upassLabel")
         self.upassLabel.setScaledContents(True)
-        self.upassLabel.setGeometry(QtCore.QRect(widthL - self.upassLabel.width() * w2, heightL - (cdpi/11) * 3.5, self.upassLabel.width(), (cdpi/11) * w3))
              
         self.upass = QtWidgets.QLineEdit(self.LoginPage)
         self.upass.setObjectName("upass")
         self.upass.setPlaceholderText("Password")
         self.upass.setEchoMode(self.upass.Password)
-        self.upass.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL - (cdpi/11) * 3.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
         
         self.hostLabel = QtWidgets.QLabel(self.LoginPage)
         self.hostLabel.setObjectName("hostLabel")
         self.hostLabel.setScaledContents(True)
-        self.hostLabel.setGeometry(QtCore.QRect(widthL - self.hostLabel.width() * w2, heightL - (cdpi/11) * 0.5, self.hostLabel.width(), (cdpi/11) * w3))
         
         self.uhost = QtWidgets.QLineEdit(self.LoginPage)
         self.uhost.setObjectName("uhost")
         self.uhost.setPlaceholderText("Local Host is 127.0.0.1")
-        self.uhost.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL - (cdpi/11) * 0.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
         
         self.uportLabel = QtWidgets.QLabel(self.LoginPage)
         self.uportLabel.setObjectName("uportLabel")
         self.uportLabel.setScaledContents(True)
-        self.uportLabel.setGeometry(QtCore.QRect(widthL - self.uportLabel.width() * w2, heightL + (cdpi/11) * 2.5, self.uportLabel.width(), (cdpi/11) * w3))
         
         self.uport = QtWidgets.QLineEdit(self.LoginPage)
         self.uport.setObjectName("uport")
         self.uport.setPlaceholderText("Default Port is 3306")
-        self.uport.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 2.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
 
         self.DropDownLabel = QtWidgets.QLabel(self.LoginPage)
         self.DropDownLabel.setObjectName("DropDownLabel")
         self.DropDownLabel.setScaledContents(True)
-        self.DropDownLabel.setGeometry(QtCore.QRect(widthL - self.DropDownLabel.width() * w2, heightL + (cdpi/2), self.DropDownLabel.width() + 2, (cdpi/11) * w3))
 
         self.DropDown = QtWidgets.QComboBox(self.LoginPage)
         self.DropDown.setObjectName("DropDown")
-        self.DropDown.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/2), self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
         
         self.SaveLogin = QtWidgets.QCheckBox(self.LoginPage)
         self.SaveLogin.setObjectName("SaveLogin")
-        self.SaveLogin.setGeometry(QtCore.QRect(widthL -  110* w2, heightL + (cdpi/11) * 9, 120, (cdpi/11) * (w3/1.66)))
         
         self.LoginButton = QtWidgets.QPushButton(self.LoginPage)
         self.LoginButton.setObjectName("LoginButton")
         self.LoginButton.setAutoDefault(True)
-        self.LoginButton.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 8.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
 
         self.MysqlImage = QtWidgets.QLabel(self.LoginPage)
         self.MysqlImage.setText("")
-        self.MysqlImage.setPixmap(QtGui.QPixmap("logo.png"))
+        self.MysqlImage.setPixmap(QtGui.QPixmap("Login_Image.png"))
         self.MysqlImage.setObjectName("MysqlImage")
         self.MysqlImage.setScaledContents(True)
-        self.MysqlImage.setGeometry(QtCore.QRect(widthL - (cdpi*(250/96))/2, heightL - ((((cdpi*(163/96))*1.5)/(w3/2)) + (self.uhost.frameGeometry().height()/2) + self.upass.frameGeometry().height() + self.uname.frameGeometry().height()), cdpi*(250/96), cdpi*(163/96)))
 
         # --- MYSQL EXPLORER ---
-        
-        widthE = self.mysqlExplorer.frameGeometry().width()
-        heightE = self.mysqlExplorer.frameGeometry().height()
-        
 
         self.databaseView = QtWidgets.QListWidget(self.Explorer)
-        self.databaseView.setGeometry(QtCore.QRect(widthE/100 * 0.2, heightE/100 * 0.5, widthE/100 * 20, heightE/100 * 96.2))
         self.databaseView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         heightTD = self.databaseView.frameGeometry().height()
         self.databaseView.setItemAlignment(QtCore.Qt.AlignLeading)
@@ -154,7 +133,6 @@ class Ui_MainWindow(object):
         self.databaseView.setContextMenuPolicy(Qt.CustomContextMenu)
 
         self.tableView = QtWidgets.QListWidget(self.Explorer)
-        self.tableView.setGeometry(QtCore.QRect(widthE/100 * 20.4, heightE/100 * 0.5, widthE/100 * 25, heightE/100 * 96.2))
         self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         heightTT = self.tableView.frameGeometry().height()
         self.tableView.setItemAlignment(QtCore.Qt.AlignLeading)
@@ -162,31 +140,33 @@ class Ui_MainWindow(object):
         self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
 
         self.tableData = QtWidgets.QTableWidget(self.Explorer)
-        self.tableData.setGeometry(QtCore.QRect(widthE/100 * 45.7, heightE/100 * 0.5, widthE/100 * 53.9, heightE/100 * 96.2))
         self.tableData.setObjectName("tableData")
 
         # --- DATABASE CREATOR ---
+        w3 = hpx/432
 
         self.cdbWindow = QtWidgets.QWidget()
         self.cdbWindow.setObjectName("cdbWindow")
-        self.cdbWindow.resize((300*cdpi)/(wpx/(cdpi/6)), (200*cdpi)/(hpx/(cdpi/10)))
+        self.cdbWindow.resize(cdpi*(200/96), cdpi*(130/96))
 
         widthB = self.cdbWindow.frameGeometry().width()
         heightB = self.cdbWindow.frameGeometry().height()
         
-        self.dbnameLabel = QtWidgets.QLabel(self.cdbWindow)
+        self.dbnameLabel = QtWidgets.QTextBrowser(self.cdbWindow)
         self.dbnameLabel.setObjectName("dbnameLabel")
-        self.dbnameLabel.setScaledContents(True)
-        self.dbnameLabel.setGeometry(QtCore.QRect(self.cdbWindow.frameGeometry().width()/2 - ((165*wpx/(cdpi*11.25))/4), self.cdbWindow.frameGeometry().height()/2 - (50*hpx/(cdpi*11.25))*1.25, 165*wpx/(cdpi*11.25), 50*hpx/(cdpi*11.25)))
+        self.dbnameLabel.setGeometry(QtCore.QRect((7/96)*cdpi, (7/96)*cdpi, cdpi*(187/96), cdpi*(60/96)))
         
         self.dbname = QtWidgets.QLineEdit(self.cdbWindow)
         self.dbname.setObjectName("dbname")
         self.dbname.setPlaceholderText("New Database Name")
-        self.dbname.setGeometry(QtCore.QRect(self.cdbWindow.frameGeometry().width()/2 - ((w/10.9714)/2), self.cdbWindow.frameGeometry().height()/2, w/10.9714, (cdpi/11) * w3))
+        self.dbname.setGeometry(QtCore.QRect((7/96)*cdpi, self.cdbWindow.frameGeometry().height() - ((((cdpi/11) * w3)*1.5)*1.8), cdpi*(187/96), (cdpi/11) * w3))
+
 
         self.cdbButton = QtWidgets.QPushButton(self.cdbWindow)
         self.cdbButton.setObjectName("cdbButton")
-        self.cdbButton.setGeometry(QtCore.QRect(self.cdbWindow.frameGeometry().width()/2 - ((w/10.9714)/2), self.cdbWindow.frameGeometry().height()/2 + ((cdpi/11) * w3)*1.5, w/10.9714, (cdpi/11) * w3))
+        self.cdbButton.setGeometry(QtCore.QRect(self.cdbWindow.frameGeometry().width()/2 - ((w/10.9714)/2), self.cdbWindow.frameGeometry().height() - ((cdpi/11) * w3)*1.5, w/10.9714, (cdpi/10) * w3))
+
+        self.cdbWindow.show()
 
         # --- TABLE CREATOR ---
 
@@ -194,8 +174,8 @@ class Ui_MainWindow(object):
         self.ctWindow.setObjectName("ctWindow")
         self.ctWindow.resize((cdpi*(585/96)), (cdpi*(515/96)))
         self.ctWindow.setContextMenuPolicy(Qt.CustomContextMenu)
-        #self.ctWindow.setMinimumSize((340*cdpi)/(wpx/(cdpi/6)), (265*cdpi)/(hpx/(cdpi/8)))
-        #self.ctWindow.setMaximumSize((340*cdpi)/(wpx/(cdpi/6)), (265*cdpi)/(hpx/(cdpi/8)))
+        self.ctWindow.setMinimumSize((cdpi*(585/96)), (cdpi*(515/96)))
+        self.ctWindow.setMaximumSize((cdpi*(585/96)), (cdpi*(515/96)))
 
         widthA = self.ctWindow.frameGeometry().width()
         heightA = self.ctWindow.frameGeometry().height()
@@ -251,6 +231,8 @@ class Ui_MainWindow(object):
         self.ctRPicker.setObjectName("ctRPicker")
         self.ctRPicker.setGeometry(QtCore.QRect((cdpi*(10/96)), (cdpi*(40/96)), (cdpi*(130/96)), (cdpi*(25/96))))
         self.ctRPicker.addItem("New Row")
+
+        #self.ctWindow.show()
 
         # --- SETTING UP CONNECTIONS ---
 
@@ -478,6 +460,7 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 
         def editItem():
             rowid = self.tableData.currentRow()
+            rowval = rowid.text()
             column = self.tableData.currentColumn()
             if column != -1 or rowid != -1:
                 c4n3x3 = mysql.connector.connect(user=self.uname.text(), password=self.upass.text(), host=self.uhost.text(), port=self.uport.text(), database = self.databaseView.currentItem().text())
@@ -486,15 +469,16 @@ Please Consider editing the data file, deleting the datafile, or using another a
                 cursor.execute("SELECT * FROM " + iteme)
                 rows2 = cursor.fetchall()
                 a = -1
-                for row2 in rows2:
-                    a += 1
-                    if a == rowid:
-                        #print(row2)
-                        cc = len(rows2[0]) - column
-                        itemc = len(rows2[0]) - cc
-                        print(self.tableData.item(rowid, column).text())
-                        print(row2[itemc])
-                        LoadTable()
+                cursor.execute("UPDATE " + self.tableView.currentItem().text() + " SET " + column.text() + " = " + iteme + "WHERE " + column.text() + " = " + rowval)
+                #for row2 in rows2:
+                #    a += 1
+                #    if a == rowid:
+                #        #print(row2)
+                #        cc = len(rows2[0]) - column
+                #        itemc = len(rows2[0]) - cc
+                #        print(self.tableData.item(rowid, column).text())
+                #        print(row2[itemc])
+                #        LoadTable()
             else:
                 pass
 
@@ -582,8 +566,8 @@ Please Consider editing the data file, deleting the datafile, or using another a
             width = MainWindow.frameGeometry().width()
             height = MainWindow.frameGeometry().height()
             self.mysqlExplorer.setGeometry(QtCore.QRect(0, 0, width, height))
-            widthL = self.mysqlExplorer.frameGeometry().width()/10 * 5
-            heightL = self.mysqlExplorer.frameGeometry().height()/10 * 5
+            widthL = self.mysqlExplorer.frameGeometry().width()/2
+            heightL = self.mysqlExplorer.frameGeometry().height()/2
             w2 = cdpi/80
             w3 = hpx/432
             self.unameLabel.setGeometry(QtCore.QRect(widthL - self.unameLabel.width() * w2, heightL - (cdpi/11) * 6.5, self.unameLabel.width(), (cdpi/11) * w3))
@@ -594,7 +578,7 @@ Please Consider editing the data file, deleting the datafile, or using another a
             self.uhost.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL - (cdpi/11) * 0.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
             self.uportLabel.setGeometry(QtCore.QRect(widthL - self.uportLabel.width() * w2, heightL + (cdpi/11) * 2.5, self.uportLabel.width(), (cdpi/11) * w3))
             self.uport.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 2.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
-            self.DropDownLabel.setGeometry(QtCore.QRect(widthL - self.DropDownLabel.width() * w2, heightL + (cdpi/2), self.DropDownLabel.width() + 2, (cdpi/11) * w3))
+            self.DropDownLabel.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * (w2)), heightL + (cdpi/2), (100/96)*cdpi, (cdpi/11) * w3))
             self.DropDown.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/2), self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
             self.SaveLogin.setGeometry(QtCore.QRect(widthL -  110* w2, heightL + (cdpi/11) * 9, 120, (cdpi/11) * (w3/1.66)))
             self.LoginButton.setGeometry(QtCore.QRect(widthL - (self.unameLabel.frameGeometry().width() * 2.5)/6, heightL + (cdpi/11) * 8.5, self.unameLabel.frameGeometry().width() * (w2*2), (cdpi/11) * w3))
@@ -643,7 +627,7 @@ Please Consider editing the data file, deleting the datafile, or using another a
         self.LoginButton.setText(QtWidgets.QApplication.translate("MainWindow", "Login", None, -1))
         # --- Database Creator ---
         self.cdbWindow.setWindowTitle(QtWidgets.QApplication.translate("cdbWindow", "Database Creator", None, -1))
-        self.dbnameLabel.setText(QtWidgets.QApplication.translate("cdbWindow", "Please Enter the name of the\nnew database you would like\nto create!", None, -1))
+        self.dbnameLabel.setText(QtWidgets.QApplication.translate("cdbWindow", "Please Enter the name of the new database you would like to create. Then hit the \"create database\" button to create the new database!", None, -1))
         self.cdbButton.setText(QtWidgets.QApplication.translate("cdbWindow", "Create Database", None, -1))
         # --- Table Creator ---
         self.ctWindow.setWindowTitle(QtWidgets.QApplication.translate("ctWindow", 'Table Creator'))
@@ -670,10 +654,11 @@ class Window(QtWidgets.QMainWindow):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon('Window_Icon.png'))
     #Showing Window Class instead of the Ui_MainWindow Class
     #Because the Ui_MainWindow is "Projected" through the Window Class
-    #There for allowing it to detect resizes (Not 100% sure since im not an expert)
+    #There for allowing it to detect resizes (Not 100% sure since im not an expert and its code i modified to fit my needs)
     w = Window()
-    w.show()
+    #w.show()
     sys.exit(app.exec_())
 
